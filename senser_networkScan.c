@@ -126,7 +126,7 @@ void *networkScan(void *arg)
 
 		traffic_flag = 1;
 
-		sleep(12);
+		sleep(10);
 	}
 	printf("main function exit\n");
 	return 0;
