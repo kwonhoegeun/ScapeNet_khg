@@ -1,7 +1,6 @@
 #include <stdio.h>
 
 #include "senser_networkScan.h"
-#include "senser_portscan.h"
 
 #define BUFFER_SIZE 255
 
@@ -60,11 +59,6 @@ void receiver_fifo(network_grub_args *n_args)
 	char buffer[BUFFER_SIZE] = {0,};
 	char *token_order, *token_ip;
 	u_char ip[4] = {0,};
-	int i = 0;
-	char ip_address[20];
-	portscan_grub_args p_args;
-	pthread_t t_id2;
-	int state2 = 0;
 
 	if( (pipeFd = open(".write_sense", O_RDWR)) < 0) {
 		perror("fail to call open()");
@@ -89,11 +83,7 @@ void receiver_fifo(network_grub_args *n_args)
 			} else if( strcmp(token_order, "p") == 0) {
 				puts("pass");
 				flag_order = 2;
-			} else if( strcmp(token_order, "s") == 0) {
-				puts("scan");
-				flag_order = 3;
 			}
-			
 			token_order = strtok(NULL, " ");
 			ip[3] = atoi(token_order);
 
@@ -114,26 +104,6 @@ void receiver_fifo(network_grub_args *n_args)
 				case 2:
 					printf("pass ip = %d\n",ip[3]);
 					n_args->k_list.target_ip[ip[3]] = 0;
-					break;
-				case 3:
-    //portscan(start_addr, end_addr, port, re);
-    // re 가 2일 경우
-    // start_addr 의 전체 Port 를 스켄 나머지 필드는 의미 없음
-    // re가 2가 아닐경우 3으로 해주는게 좋다
-    // start 부터 end 까지 port를 전부 스켄한다.
-    //portscan("210.118.34.27","210.118.34.255", 80, 2);
-					sprintf(ip_address,"%d.%d.%d.%d",ip[0],ip[1],ip[2],ip[3]);
-					printf("portscan = %d\n",ip[3]);
-					//portscan(ip_address,ip_address,0,2);
-					p_args.ip = ip_address;
-					p_args.t_port = 0;
-					p_args.repley = 2;
-
-					state2 = pthread_create(&t_id2, NULL, portscan, &p_args);
-					if(state2 != 0) {
-						fprintf(stderr, "pthread_create() error\n");
-						return ;
-					}
 					break;
 			}
 		}
