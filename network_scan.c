@@ -1,4 +1,4 @@
-#include "senser_networkScan.h"
+#include "network_scan.h"
 
 int traffic_flag = 0;
 

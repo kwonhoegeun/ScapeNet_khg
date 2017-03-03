@@ -19,8 +19,8 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
-#include "senser_protocol.h"
-#include "senser_nodeKill.h"
+#include "protocol.h"
+#include "node_kill.h"
 
 #define MAXBYTES2CAPTURE 2048
 

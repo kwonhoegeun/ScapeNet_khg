@@ -4,16 +4,16 @@ LDFLAGS = -lm -lpcap -lpthread
 
 all: scan
 
-scan: senser_main.o senser_networkScan.o senser_nodeKill.o
+scan: main.o network_scan.o node_kill.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-senser_main.o: senser_main.c senser_networkScan.h
+main.o: main.c network_scan.h
 	$(CC) $(CFLAGS) -c $<
 
-senser_networkScan.o: senser_networkScan.c senser_networkScan.h
+network_scan.o: network_scan.c network_scan.h
 	$(CC) $(CFLAGS) -c $<
 
-senser_nodeKill.o: senser_nodeKill.c senser_nodeKill.h
+node_kill.o: node_kill.c node_kill.h
 	$(CC) $(CFLAGS) -c $<
 
 clean:

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "senser_protocol.h"
+#include "protocol.h"
 
 typedef struct killnode_list {
 	u_char target_ip[255];

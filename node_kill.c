@@ -1,4 +1,4 @@
-#include "senser_nodeKill.h"
+#include "node_kill.h"
 
 void *send_kill_packet(void *arg)
 {

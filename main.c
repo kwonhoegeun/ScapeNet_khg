@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "senser_networkScan.h"
+#include "network_scan.h"
 
 #define BUFFER_SIZE 255
 
