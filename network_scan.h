@@ -41,6 +41,7 @@ typedef struct receiver_grub_args {
 	pcap_t *p_descr;
 	NodeStatus *p_node_status;
 	unsigned char source_ip[4];
+	pthread_mutex_t mutex;
 } receiver_grub_args;
 
 void *networkScan(void *);
@@ -51,7 +52,6 @@ int get_device_info(device_info *);
 void print_packet(const unsigned char *);
 
 void *receiver(void *);
-int check_reply_packet(const unsigned char *, struct pcap_pkthdr *, unsigned char *, NodeStatus *, int);
-void confirmNodeTraffic(const unsigned char *, struct pcap_pkthdr *, unsigned char *, int);
-
+int check_reply_packet(const unsigned char *, struct pcap_pkthdr *,
+			receiver_grub_args *);
 #endif

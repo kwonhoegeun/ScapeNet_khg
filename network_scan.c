@@ -20,8 +20,6 @@ void *networkScan(void *arg)
 	receiver_grub_args grub;
 	int i;
 
-	memset(&node_status, 0, sizeof(NodeStatus));
-
 	n_args = (network_grub_args*)arg;
 
 	memset(errbuf,0,PCAP_ERRBUF_SIZE); 
@@ -83,10 +81,8 @@ void *networkScan(void *arg)
 
 	grub.p_descr = descr;
 	grub.p_node_status = &node_status;
-
-	//memcpy((char*)&grub + 8, (unsigned char*)&dev_info + 6, 4);
-	memcpy((unsigned char*)&grub.source_ip,
-		(unsigned char*)&dev_info.ipaddr, 4);
+	memcpy(&grub.source_ip, &dev_info.ipaddr, 4);
+	pthread_mutex_init(&grub.mutex, NULL);
 
 	state1 = pthread_create(&t_id1, NULL, receiver, &grub);
 	// puts("thread start");
@@ -105,14 +101,17 @@ void *networkScan(void *arg)
 	// puts("thread start2");
 	while(1) {
 		int node_cnt = 0;
-		
-		memset(&node_status, 0, sizeof(NodeStatus));
+
+		pthread_mutex_lock(&grub.mutex);
+		memset(grub.p_node_status, 0, sizeof(*grub.p_node_status));
+		pthread_mutex_unlock(&grub.mutex);
+
 		send_arp_packet(descr, dev_info);
 		
 		sleep(3);
 		printf("\nNetwork Node Status!!!!\n");
 		for(i=1; i<255; i++) {
-			if(node_status.node[i] == 1) {
+			if (grub.p_node_status->node[i]) {
 				printf("%c[1;34m",27);
 				printf("%5d", i);
 				printf("%c[0m",27);
@@ -124,7 +123,7 @@ void *networkScan(void *arg)
 			if(i%15 == 0)
 				puts("");
 		}
-		printf("\nContected node total:_________________________________________________%d\n", node_cnt);
+		printf("\nConnected node Total: =========[ %d ]\n", node_cnt);
 
 		sleep(5);
 	}
@@ -139,10 +138,9 @@ void send_arp_packet(pcap_t *descr, device_info dev_info)
 
 	for(dest_ip=1; dest_ip<255; dest_ip++) {
 		packet = make_arp_packet(dev_info, dest_ip);
-		//if (dest_ip < 5)
-			//print_packet(packet);
 		pcap_sendpacket(descr, packet, 42);
-		usleep(10000);
+		//print_packet(packet);
+		usleep(5000);
 	}
 }
 
@@ -260,32 +258,25 @@ int get_device_info(device_info *p_dev_info)
 
 void *receiver(void *arg)
 {
-	int pipeFd = 0;
 	const unsigned char *p_packet = 0;
 	struct pcap_pkthdr *p_pkthdr = 0;
 
 	receiver_grub_args *grub = (receiver_grub_args*)arg;
 	pcap_t *p_descr = grub->p_descr;
-	NodeStatus *p_node_status = grub->p_node_status;
-	unsigned char *source_ip = 0;	
-	source_ip = grub->source_ip;
 
 	while(1){
-		if (pcap_next_ex(p_descr, &p_pkthdr, &p_packet) != 1) {
+		if (pcap_next_ex(p_descr, &p_pkthdr, &p_packet) != 1)
 			continue;
-		}
 
-		check_reply_packet(p_packet, p_pkthdr, source_ip,
-					p_node_status, pipeFd);
+		check_reply_packet(p_packet, p_pkthdr, grub);
 		//print_packet(p_packet);
 	}
-	close(pipeFd);
 
 	return 0;
 }
 
 int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr,
-	unsigned char *source_ip, NodeStatus *p_node_status, int pipeFd)
+			receiver_grub_args *grub)
 {
 	etherhdr_t *ether = (etherhdr_t*)(packet);
 	if(ntohs(ether->h_proto) != 0x0806)
@@ -300,7 +291,7 @@ int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr,
 	if(ntohs(arpheader->oper) == ARP_REQUEST)
 		return 1;
 
-	if (memcmp(arpheader->tpa, source_ip, 4))
+	if (memcmp(arpheader->tpa, grub->source_ip, 4))
 		return 1;
 
 	if (ntohs(arpheader->htype) == 1 && ntohs(arpheader->ptype) == 0x0800) {
@@ -309,12 +300,12 @@ int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr,
 			printf("%d.", arpheader->spa[i]);
 		printf("\n");
 
-		p_node_status->node[arpheader->spa[3]] = 1;
+		pthread_mutex_lock(&grub->mutex);
+		grub->p_node_status->node[arpheader->spa[3]] = 1;
+		pthread_mutex_unlock(&grub->mutex);
 	}
 
-	//usleep(400);
-	return 1; 
-
+	return 0;
 }
 
 /*test function*/
