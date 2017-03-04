@@ -4,8 +4,6 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-#define DEVICENAME "wlp3s0"
-
 /* ARP Header, (assuming Ethernet+IPv4)            */ 
 #define ARP_REQUEST 1   /* ARP Request             */ 
 #define ARP_REPLY 2     /* ARP Reply               */

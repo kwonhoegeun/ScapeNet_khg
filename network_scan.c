@@ -6,7 +6,8 @@ void *networkScan(void *arg)
 	struct bpf_program filter;        /* Place to store the BPF filter program  */ 
 	char errbuf[PCAP_ERRBUF_SIZE];    /* Error buffer                           */ 
 	pcap_t *descr = NULL;             /* Network interface handler              */
-	char *ethernet = DEVICENAME;
+	char ethernet_arr[][16] = { "eth0", "enp2s0", "wlp3s0" };
+	int ethernet_idx;
 	device_info dev_info;				/*my ethernet address*/
 	device_info gate_info;
 	NodeStatus node_status;			//노드 정보
@@ -22,32 +23,46 @@ void *networkScan(void *arg)
 
 	n_args = (network_grub_args*)arg;
 
-	memset(errbuf,0,PCAP_ERRBUF_SIZE); 
-	/* Open network device for packet capture */ 
-	if ((descr = pcap_open_live(ethernet, MAXBYTES2CAPTURE, 0,  512, errbuf))==NULL){
-		fprintf(stderr, "1ERROR: %s\n", errbuf);
-		exit(1);
+	ethernet_idx = 0;
+	while (ethernet_idx < sizeof(ethernet_arr) / sizeof(*ethernet_arr)) {
+		memset(errbuf, 0, PCAP_ERRBUF_SIZE); 
+
+		/* Open network device for packet capture */ 
+		if ((descr = pcap_open_live(ethernet_arr[ethernet_idx],
+				MAXBYTES2CAPTURE, 0,  512, errbuf)) == NULL) {
+			ethernet_idx++;
+			continue;
+		}
+
+		/* Look up info from the capture device. */ 
+		if( pcap_lookupnet(ethernet_arr[ethernet_idx] , &netaddr,
+						&mask, errbuf) == -1) {
+			ethernet_idx++;
+			continue;
+		}
+
+		printf("Ethernet name: %s\n", ethernet_arr[ethernet_idx]);
+		break;
 	}
 
-	/* Look up info from the capture device. */ 
-	if( pcap_lookupnet(ethernet , &netaddr, &mask, errbuf) == -1){
-		fprintf(stderr, "2ERROR: %s\n", errbuf);
-		exit(1);
+	if (ethernet_idx == sizeof(ethernet_arr) / sizeof(*ethernet_arr)) {
+			fprintf(stderr, "1ERROR: %s\n", errbuf);
+			exit(1);
 	}
 
 	/* Compiles the filter expression into a BPF filter program */ 
 	if ( pcap_compile(descr, &filter, "tcp or arp", 1, mask) == -1){
-		fprintf(stderr, "3ERROR: %s\n", pcap_geterr(descr) );
+		fprintf(stderr, "2ERROR: %s\n", pcap_geterr(descr) );
 		exit(1);
 	}
 
 	/* Load the filter program into the packet capture device. */ 
 	if (pcap_setfilter(descr,&filter) == -1){
-		fprintf(stderr, "4ERROR: %s\n", pcap_geterr(descr) );
+		fprintf(stderr, "3ERROR: %s\n", pcap_geterr(descr) );
 		exit(1);
 	}
 
-	get_device_info(&dev_info);
+	get_device_info(&dev_info, ethernet_arr[ethernet_idx]);
 
 	k_args.n_args = n_args;
 	k_args.gate_info = &gate_info;
@@ -176,7 +191,7 @@ unsigned char* make_arp_packet(device_info dev_info, u_char dest_last_addr)
 	return pack_data;
 }
 
-int get_device_info(device_info *p_dev_info)
+int get_device_info(device_info *p_dev_info, const char *ethernet_name)
 {
     // 이더넷 데이터 구조체 
     struct ifreq *ifr;
@@ -231,7 +246,7 @@ int get_device_info(device_info *p_dev_info)
         char *p_temp;
         // 주소값을 출력하고 루프백 주소인지 확인한다.
         // printf("[%s]\n", ifr->ifr_name);
-        if(strcmp(ifr->ifr_name, DEVICENAME) == 0) {
+        if(strcmp(ifr->ifr_name, ethernet_name) == 0) {
             sin = (struct sockaddr_in *)&ifr->ifr_addr;
 
             p_temp = strtok(inet_ntoa(sin->sin_addr), ".");
@@ -284,8 +299,6 @@ int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr,
 
 	/* Point to the ARP header */
 	arphdr_t *arpheader = (struct arphdr *)(packet+14); 
-	char result[1024] = {0,};
-	int writen;
 	int i=0;
 	
 	if(ntohs(arpheader->oper) == ARP_REQUEST)
