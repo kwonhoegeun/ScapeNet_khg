@@ -1,7 +1,5 @@
 #include "network_scan.h"
 
-int traffic_flag = 0;
-
 void *networkScan(void *arg)
 {
 	bpf_u_int32 netaddr=0, mask=0;    /* To Store network address and netmask   */ 
@@ -57,7 +55,8 @@ void *networkScan(void *arg)
 	k_args.gate_info = &gate_info;
 	k_args.descr = descr;
 
-	while(1) {			/* get gateway*/
+	/* get gateway*/
+	while(1) {
 		const unsigned char *packet = NULL; //packet
 		struct pcap_pkthdr *p_pkthdr = 0;
 
@@ -84,7 +83,10 @@ void *networkScan(void *arg)
 
 	grub.p_descr = descr;
 	grub.p_node_status = &node_status;
-	memcpy( (char*)&grub+8, (unsigned char*)&dev_info+6, 4);
+
+	//memcpy((char*)&grub + 8, (unsigned char*)&dev_info + 6, 4);
+	memcpy((unsigned char*)&grub.source_ip,
+		(unsigned char*)&dev_info.ipaddr, 4);
 
 	state1 = pthread_create(&t_id1, NULL, receiver, &grub);
 	// puts("thread start");
@@ -103,14 +105,14 @@ void *networkScan(void *arg)
 	// puts("thread start2");
 	while(1) {
 		int node_cnt = 0;
-		traffic_flag = 0;
+		
 		memset(&node_status, 0, sizeof(NodeStatus));
 		send_arp_packet(descr, dev_info);
 		
 		sleep(3);
 		printf("\nNetwork Node Status!!!!\n");
 		for(i=1; i<255; i++) {
-			if(node_status.node[i].status == 1) {
+			if(node_status.node[i] == 1) {
 				printf("%c[1;34m",27);
 				printf("%5d", i);
 				printf("%c[0m",27);
@@ -122,11 +124,9 @@ void *networkScan(void *arg)
 			if(i%15 == 0)
 				puts("");
 		}
-		printf("\n_____________________________________________________________________________%d\n", node_cnt);
+		printf("\nContected node total:_________________________________________________%d\n", node_cnt);
 
-		traffic_flag = 1;
-
-		sleep(10);
+		sleep(5);
 	}
 	printf("main function exit\n");
 	return 0;
@@ -139,7 +139,8 @@ void send_arp_packet(pcap_t *descr, device_info dev_info)
 
 	for(dest_ip=1; dest_ip<255; dest_ip++) {
 		packet = make_arp_packet(dev_info, dest_ip);
-		// print_packet(packet);
+		//if (dest_ip < 5)
+			//print_packet(packet);
 		pcap_sendpacket(descr, packet, 42);
 		usleep(10000);
 	}
@@ -269,120 +270,50 @@ void *receiver(void *arg)
 	unsigned char *source_ip = 0;	
 	source_ip = grub->source_ip;
 
-/*	if ((pipeFd = open(".read_sense", O_RDWR)) < 0) {
-		perror("fail to call open()");
-		exit(1);
-	}
-*/
 	while(1){
 		if (pcap_next_ex(p_descr, &p_pkthdr, &p_packet) != 1) {
 			continue;
 		}
 
-		/*if ((pipeFd = open(".read_sense", O_RDWR)) < 0) {
-			perror("fail to call open()");
-			exit(1);
-		}*/
-
-
-
-		/*if(traffic_flag == 1) {
-			confirmNodeTraffic(p_packet, p_pkthdr, source_ip, pipeFd);
-		}*/
-		
-		check_reply_packet(p_packet, p_pkthdr, source_ip, p_node_status, pipeFd);
-
-		//close(pipeFd);
+		check_reply_packet(p_packet, p_pkthdr, source_ip,
+					p_node_status, pipeFd);
+		//print_packet(p_packet);
 	}
 	close(pipeFd);
 
 	return 0;
 }
 
-int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr, unsigned char *source_ip, NodeStatus *p_node_status, int pipeFd)
+int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr,
+	unsigned char *source_ip, NodeStatus *p_node_status, int pipeFd)
 {
 	etherhdr_t *ether = (etherhdr_t*)(packet);
 	if(ntohs(ether->h_proto) != 0x0806)
-		return 0;
-	
-	arphdr_t *arpheader = (struct arphdr *)(packet+14); /* Point to the ARP header */
+		return 1;
+
+	/* Point to the ARP header */
+	arphdr_t *arpheader = (struct arphdr *)(packet+14); 
 	char result[1024] = {0,};
 	int writen;
 	int i=0;
 	
 	if(ntohs(arpheader->oper) == ARP_REQUEST)
-		return 0;
+		return 1;
 
-	if(memcmp(arpheader->tpa, source_ip, 4) != 0)
-		return 0;
+	if (memcmp(arpheader->tpa, source_ip, 4))
+		return 1;
 
-	if (ntohs(arpheader->htype) == 1 && ntohs(arpheader->ptype) == 0x0800){ 
-		
-		printf("\n Receiver IP: "); 
+	if (ntohs(arpheader->htype) == 1 && ntohs(arpheader->ptype) == 0x0800) {
+		printf("Receiver IP: "); 
 		for(i=0; i<4;i++)
 			printf("%d.", arpheader->spa[i]);
+		printf("\n");
 
-		p_node_status->node[arpheader->spa[3]].status = 1;
-
-		//sprintf(result,"echo D~%d.%d.%d.%d > .read_sense", arpheader->spa[0], arpheader->spa[1], arpheader->spa[2], arpheader->spa[3]);
-
+		p_node_status->node[arpheader->spa[3]] = 1;
 	}
 
-	/*if ((writen = write(pipeFd, result, strlen(result))) < 0) {
-		perror("write error");
-		exit(1);
-	}
-	*/
-	system(result);
-	usleep(400);
+	//usleep(400);
 	return 1; 
-
-}
-
-void confirmNodeTraffic(const unsigned char *packet, struct pcap_pkthdr *pkthdr, unsigned char *source_ip, int pipeFd)
-{
-	int writen;
-
-	etherhdr_t *ether = (etherhdr_t*) (packet);
-	if(ntohs(ether->h_proto) == 0x0800){
-		struct ip *iphdr = (struct ip*) (packet+ sizeof(etherhdr_t));
-		struct tcphdr *tcp = (struct tcphdr*) (packet+ sizeof(etherhdr_t) + sizeof(struct ip));
-
-		unsigned char c_src_ip[4] = {0,};
-		unsigned char c_dst_ip[4] = {0,};
-		u_int n_ip_temp;
-		u_char *p_c_ip;
-		
-		n_ip_temp = *((unsigned int*)(&(iphdr->ip_src)));		//Cu¹o?E?.
-		p_c_ip = (u_char*) (&n_ip_temp);
-		memcpy(&c_src_ip, p_c_ip, 4);
-
-		n_ip_temp = *((unsigned int*)(&(iphdr->ip_dst)));		//Cu¹o?E?.
-		p_c_ip = (u_char*) (&n_ip_temp);
-		memcpy(&c_dst_ip, p_c_ip, 4);
-		
-		//printf("tcp dest port: %d\n", ntohs(tcp->dest));
-		char result[1024] = {0,};
-		
-		if(c_src_ip[0] == 210 && c_src_ip[1] == 118 && c_src_ip[2] == 34){
-			sprintf(result,"echo D@%d.%d.%d.%dL%dLu%dL%d.%d.%d.%d > .read_sense", c_src_ip[0], c_src_ip[1], c_src_ip[2], c_src_ip[3], ntohs(tcp->dest), pkthdr->len, c_dst_ip[0], c_dst_ip[1], c_dst_ip[2], c_dst_ip[3]);
-			
-		// printf("%d ", *((u_char*)(&n_ip_temp)+i) );
-		}
-		else{
-			sprintf(result,"echo D@%d.%d.%d.%dL%dLd%dL%d.%d.%d.%d > .read_sense", c_dst_ip[0], c_dst_ip[1], c_dst_ip[2], c_dst_ip[3], ntohs(tcp->source), pkthdr->len, c_src_ip[0], c_src_ip[1], c_src_ip[2], c_src_ip[3]);
-			
-		}
-
-		//printf("%s\n", result);
-		/*if ((writen = write(pipeFd, result, strlen(result))) < 0) {
-			perror("write error");
-			exit(1);
-		}*/
-		system(result);
-		usleep(300);
-
-	}
 
 }
 

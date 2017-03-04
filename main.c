@@ -9,8 +9,8 @@ void receiver_fifo(network_grub_args *n_args);
 int main(int argc, char *argv[])
 {
 	network_grub_args n_args;
-	pthread_t t_id1;
-	int state1 = 0;
+	pthread_t t_id;
+	int ret;
 	int i;
 	
 	printf("network Scaning\n");
@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 	else if(argc == 1)
 		printf("Defluat GateWay: 1\n");
 	
-	state1 = pthread_create(&t_id1, NULL, networkScan, &n_args);
-	if(state1 != 0) {
+	ret = pthread_create(&t_id, NULL, networkScan, &n_args);
+	if (ret) {
 		fprintf(stderr, "pthread_create() error\n");
 		return 0;
 	}

@@ -24,15 +24,8 @@
 
 #define MAXBYTES2CAPTURE 2048
 
-typedef struct NodeInfo {
-	int status;	//상태
-	int openPorts[20]; //열린포트
-	int traffics_up; //traffic 양
-	int traffics_down; //traffic 양
-} NodeInfo;
-
 typedef struct NodeStatus {
-	NodeInfo node[255];
+	int node[255];
 } NodeStatus;
 
 /*typedef struct killnode_list {
