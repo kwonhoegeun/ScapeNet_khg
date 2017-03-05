@@ -4,7 +4,6 @@
 #include <pcap.h>
 #include <string.h>
 #include <unistd.h>
-
 #include "protocol.h"
 
 typedef struct killnode_list {
@@ -23,7 +22,7 @@ typedef struct sendkill_grub_args {
 } sendkill_grub_args;
 
 void *send_kill_packet(void *);
-unsigned char* make_kill_packet(device_info , u_char , u_char );
-int gateway_get(const unsigned char *, u_char , device_info *);
+u_char *make_kill_packet(device_info, u_char, u_char);
+int gateway_get(const u_char *, u_char, device_info *);
 
 #endif
