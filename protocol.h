@@ -9,8 +9,8 @@
 #define ARP_REPLY 2     /* ARP Reply               */
 
 typedef struct etherhdr {
-	unsigned char h_dest[6];
-	unsigned char h_source[6];
+	u_char h_dest[6];
+	u_char h_source[6];
 	unsigned short h_proto;
 } etherhdr_t;
 
@@ -27,8 +27,8 @@ typedef struct arphdr {
 }arphdr_t;
 
 typedef struct device_info {
-	unsigned char macaddr[6];
-	unsigned char ipaddr[4];
+	u_char macaddr[6];
+	u_char ipaddr[4];
 } device_info;
 
 #endif
