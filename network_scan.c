@@ -72,7 +72,7 @@ void *networkScan(void *arg)
 		const u_char *packet = NULL;
 		struct pcap_pkthdr *p_pkthdr = 0;
 
-		packet = make_arp_packet(dev_info, n_args->g_ip);
+		packet = make_arp_packet(&dev_info, n_args->g_ip);
 
 		pcap_sendpacket(descr, packet, 42);
 		if (pcap_next_ex(descr, &p_pkthdr, &packet) != 1)
@@ -120,7 +120,7 @@ void *networkScan(void *arg)
 		memset(grub.p_node_status, 0, sizeof(*grub.p_node_status));
 		pthread_mutex_unlock(&grub.mutex);
 
-		send_arp_packet(descr, dev_info);
+		send_arp_packet(descr, &dev_info);
 		sleep(3);
 
 		printf("\nNetwork Node Status!!!!\n");
@@ -147,20 +147,20 @@ void *networkScan(void *arg)
 	return 0;
 }
 
-void send_arp_packet(pcap_t *descr, device_info dev_info)
+void send_arp_packet(pcap_t *descr, device_info *p_dev_info)
 {
 	int dest_ip;
 	const u_char *packet = NULL;
 
 	for (dest_ip = 1; dest_ip < 255; dest_ip++) {
-		packet = make_arp_packet(dev_info, dest_ip);
+		packet = make_arp_packet(p_dev_info, dest_ip);
 		pcap_sendpacket(descr, packet, 42);
 		//print_packet(packet);
 		usleep(5000);
 	}
 }
 
-u_char* make_arp_packet(device_info dev_info, u_char dest_last_addr)
+u_char* make_arp_packet(device_info *p_dev_info, u_char dest_last_addr)
 {
 	static u_char pack_data[42];
 	etherhdr_t et_hdr;
@@ -168,7 +168,7 @@ u_char* make_arp_packet(device_info dev_info, u_char dest_last_addr)
 
 	/* ethernet */
 	memset(&et_hdr, 0xff, 6);			/* et_hdr.h_dest[] */
-	memcpy((u_char*)&et_hdr+6, &dev_info, 6);/* et_hdr.h_source[] */
+	memcpy((u_char*)&et_hdr+6, p_dev_info, 6);/* et_hdr.h_source[] */
 
 	et_hdr.h_proto = htons(0x0806);
 
@@ -179,9 +179,9 @@ u_char* make_arp_packet(device_info dev_info, u_char dest_last_addr)
 	arp_hdr.oper = htons(ARP_REQUEST);
 	arp_hdr.hlen = 0x06;
 	arp_hdr.plen = 0x04;
-	memcpy((u_char*)&arp_hdr+8, &dev_info, 6);	/* arp_hdr.sha[] */
-	memcpy((u_char*)&arp_hdr+14, (u_char*)&dev_info+6, 4);	/* arp_hdr.sha[] */
-	memcpy((u_char*)&arp_hdr+24, (u_char*)&dev_info+6, 3);	/* arp_hdr.tpa[3] 까지 */
+	memcpy((u_char*)&arp_hdr+8, p_dev_info, 6);	/* arp_hdr.sha[] */
+	memcpy((u_char*)&arp_hdr+14, (u_char*)p_dev_info + 6, 4);	/* arp_hdr.sha[] */
+	memcpy((u_char*)&arp_hdr+24, (u_char*)p_dev_info + 6, 3);	/* arp_hdr.tpa[3] 까지 */
 
 	arp_hdr.tpa[3] = dest_last_addr;
 

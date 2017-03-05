@@ -30,8 +30,8 @@ typedef struct receiver_grub_args {
 } receiver_grub_args;
 
 void *networkScan(void *);
-void send_arp_packet(pcap_t *, device_info);
-u_char* make_arp_packet(device_info, u_char );
+void send_arp_packet(pcap_t *, device_info *);
+u_char* make_arp_packet(device_info *, u_char );
 
 int get_device_info(device_info *, const char *);
 void print_packet(const u_char *);
