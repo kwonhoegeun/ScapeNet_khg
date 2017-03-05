@@ -1,7 +1,7 @@
 #ifndef _NODEKILL
 #define _NODEKILL
 
-#include <pcap.h> 
+#include <pcap.h>
 #include <string.h>
 #include <unistd.h>
 

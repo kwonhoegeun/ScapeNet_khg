@@ -2,9 +2,9 @@
 
 void *networkScan(void *arg)
 {
-	bpf_u_int32 netaddr=0, mask=0;    /* To Store network address and netmask   */ 
-	struct bpf_program filter;        /* Place to store the BPF filter program  */ 
-	char errbuf[PCAP_ERRBUF_SIZE];    /* Error buffer                           */ 
+	bpf_u_int32 netaddr=0, mask=0;    /* To Store network address and netmask   */
+	struct bpf_program filter;        /* Place to store the BPF filter program  */
+	char errbuf[PCAP_ERRBUF_SIZE];    /* Error buffer                           */
 	pcap_t *descr = NULL;             /* Network interface handler              */
 	char ethernet_arr[][16] = { "eth0", "enp2s0", "wlp3s0" };
 	int ethernet_idx;
@@ -25,16 +25,16 @@ void *networkScan(void *arg)
 
 	ethernet_idx = 0;
 	while (ethernet_idx < sizeof(ethernet_arr) / sizeof(*ethernet_arr)) {
-		memset(errbuf, 0, PCAP_ERRBUF_SIZE); 
+		memset(errbuf, 0, PCAP_ERRBUF_SIZE);
 
-		/* Open network device for packet capture */ 
+		/* Open network device for packet capture */
 		if ((descr = pcap_open_live(ethernet_arr[ethernet_idx],
 				MAXBYTES2CAPTURE, 0,  512, errbuf)) == NULL) {
 			ethernet_idx++;
 			continue;
 		}
 
-		/* Look up info from the capture device. */ 
+		/* Look up info from the capture device. */
 		if( pcap_lookupnet(ethernet_arr[ethernet_idx] , &netaddr,
 						&mask, errbuf) == -1) {
 			ethernet_idx++;
@@ -50,13 +50,13 @@ void *networkScan(void *arg)
 			exit(1);
 	}
 
-	/* Compiles the filter expression into a BPF filter program */ 
+	/* Compiles the filter expression into a BPF filter program */
 	if ( pcap_compile(descr, &filter, "tcp or arp", 1, mask) == -1){
 		fprintf(stderr, "2ERROR: %s\n", pcap_geterr(descr) );
 		exit(1);
 	}
 
-	/* Load the filter program into the packet capture device. */ 
+	/* Load the filter program into the packet capture device. */
 	if (pcap_setfilter(descr,&filter) == -1){
 		fprintf(stderr, "3ERROR: %s\n", pcap_geterr(descr) );
 		exit(1);
@@ -70,7 +70,7 @@ void *networkScan(void *arg)
 
 	/* get gateway*/
 	while(1) {
-		const unsigned char *packet = NULL; //packet
+		const unsigned char *packet = NULL; /* packet */
 		struct pcap_pkthdr *p_pkthdr = 0;
 
 		packet = make_arp_packet(dev_info, n_args->g_ip);
@@ -122,8 +122,8 @@ void *networkScan(void *arg)
 		pthread_mutex_unlock(&grub.mutex);
 
 		send_arp_packet(descr, dev_info);
-		
 		sleep(3);
+
 		printf("\nNetwork Node Status!!!!\n");
 		for(i=1; i<255; i++) {
 			if (grub.p_node_status->node[i]) {
@@ -170,7 +170,7 @@ unsigned char* make_arp_packet(device_info dev_info, u_char dest_last_addr)
 	memcpy((unsigned char*)&et_hdr+6, &dev_info, 6);	//et_hdr.h_source[]
 
 	et_hdr.h_proto = htons(0x0806);
-	
+
 	/*arp*/
 	memset(&arp_hdr, 0x00, sizeof(arphdr_t));		//init
 	arp_hdr.htype = htons(0x0001);
@@ -193,12 +193,12 @@ unsigned char* make_arp_packet(device_info dev_info, u_char dest_last_addr)
 
 int get_device_info(device_info *p_dev_info, const char *ethernet_name)
 {
-    // 이더넷 데이터 구조체 
+    /* 이더넷 데이터 구조체 */
     struct ifreq *ifr;
     struct sockaddr_in *sin;
     struct sockaddr *sa;
 
-    // 이더넷 설정 구조체
+    /* 이더넷 설정 구조체 */
     struct ifconf ifcfg;
     int fd;
     int n;
@@ -208,10 +208,10 @@ int get_device_info(device_info *p_dev_info, const char *ethernet_name)
     memset(p_dev_info, 0, sizeof(device_info));
 
 
-    // 이더넷 설정정보를 가지고오기 위해서 
-    // 설정 구조체를 초기화하고  
-    // ifreq데이터는 ifc_buf에 저장되며, 
-    // 네트워크 장치가 여러개 있을 수 있으므로 크기를 충분히 잡아주어야 한다.  
+    // 이더넷 설정정보를 가지고오기 위해서
+    // 설정 구조체를 초기화하고
+    // ifreq데이터는 ifc_buf에 저장되며,
+    // 네트워크 장치가 여러개 있을 수 있으므로 크기를 충분히 잡아주어야 한다.
     // 보통은 루프백주소와 하나의 이더넷카드, 2개의 장치를 가진다.
     memset(&ifcfg, 0, sizeof(ifcfg));
     ifcfg.ifc_buf = NULL;
@@ -225,21 +225,21 @@ int get_device_info(device_info *p_dev_info, const char *ethernet_name)
             perror("SIOCGIFCONF ");
             return 1;
         }
-        // 디버깅 메시지 ifcfg.ifc_len/sizeof(struct ifreq)로 네트워크 
-        // 장치의 수를 계산할 수 있다.  
+        // 디버깅 메시지 ifcfg.ifc_len/sizeof(struct ifreq)로 네트워크
+        // 장치의 수를 계산할 수 있다.
         // 물론 ioctl을 통해서도 구할 수 있는데 그건 각자 해보기 바란다.
         // printf("%d : %d \n", ifcfg.ifc_len, sizeof(struct ifreq));
         break;
     }
 
-    // 주소를 비교해 보자.. ifcfg.ifc_req는 ifcfg.ifc_buf를 가리키고 있음을 
-    // 알 수 있다. 
+    // 주소를 비교해 보자.. ifcfg.ifc_req는 ifcfg.ifc_buf를 가리키고 있음을
+    // 알 수 있다.
     // printf("address %p\n", &ifcfg.ifc_req);
     // printf("address %p\n", &ifcfg.ifc_buf);
 
-    // 네트워크 장치의 정보를 얻어온다.  
-    // 보통 루프백과 하나의 이더넷 카드를 가지고 있을 것이므로 
-    // 2개의 정보를 출력할 것이다. 
+    // 네트워크 장치의 정보를 얻어온다.
+    // 보통 루프백과 하나의 이더넷 카드를 가지고 있을 것이므로
+    // 2개의 정보를 출력할 것이다.
     ifr = ifcfg.ifc_req;
     for (n = 0; n < ifcfg.ifc_len; n+= sizeof(struct ifreq)) {
         int i;
@@ -261,7 +261,7 @@ int get_device_info(device_info *p_dev_info, const char *ethernet_name)
 
             for(i=0; i<6; i++) {
                 p_dev_info->macaddr[i] = (unsigned char)((int)sa->sa_data[i]);
-            }            
+            }
 
             return 0;
         }
@@ -298,9 +298,9 @@ int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr,
 		return 1;
 
 	/* Point to the ARP header */
-	arphdr_t *arpheader = (struct arphdr *)(packet+14); 
+	arphdr_t *arpheader = (struct arphdr *)(packet + 14);
 	int i=0;
-	
+
 	if(ntohs(arpheader->oper) == ARP_REQUEST)
 		return 1;
 
@@ -308,7 +308,7 @@ int check_reply_packet(const unsigned char *packet, struct pcap_pkthdr *pkthdr,
 		return 1;
 
 	if (ntohs(arpheader->htype) == 1 && ntohs(arpheader->ptype) == 0x0800) {
-		printf("Receiver IP: "); 
+		printf("Receiver IP: ");
 		for(i=0; i<4;i++)
 			printf("%d.", arpheader->spa[i]);
 		printf("\n");
@@ -340,8 +340,8 @@ void print_packet(const unsigned char *packet)
 	printf("\nproto = %04x\n", ntohs(ether->h_proto));
 	puts("------arp Header--------------");
 
-	printf("Hardware type: %s\n", (ntohs(arpheader->htype) == 1) ? "Ethernet" : "Unknown"); 
-	printf("Protocol type: %s\n", (ntohs(arpheader->ptype) == 0x0800) ? "IPv4" : "Unknown"); 
+	printf("Hardware type: %s\n", (ntohs(arpheader->htype) == 1) ? "Ethernet" : "Unknown");
+	printf("Protocol type: %s\n", (ntohs(arpheader->ptype) == 0x0800) ? "IPv4" : "Unknown");
 	printf("Operation: %s\n", (ntohs(arpheader->oper) == ARP_REQUEST)? "ARP Request" : "ARP Reply");
 
 	/*printf("Hardware type: %04x\n", ntohs(arpheader->htype));
@@ -350,29 +350,29 @@ void print_packet(const unsigned char *packet)
 	printf("hlen: %02x\n", arpheader->hlen);
 	printf("plen: %02x\n", arpheader->plen);
 
-	/* If is Ethernet and IPv4, print packet contents */ 
-	if (ntohs(arpheader->htype) == 1 && ntohs(arpheader->ptype) == 0x0800){ 
-		printf("Sender MAC: "); 
-			
-		for(i=0; i<6;i++)
-			printf("%02X:", arpheader->sha[i]); 
+	/* If is Ethernet and IPv4, print packet contents */
+	if (ntohs(arpheader->htype) == 1 && ntohs(arpheader->ptype) == 0x0800){
+		printf("Sender MAC: ");
 
-		printf("\nSender IP: "); 
+		for(i=0; i<6;i++)
+			printf("%02X:", arpheader->sha[i]);
+
+		printf("\nSender IP: ");
 
 		for(i=0; i<4;i++)
-			printf("%d.", arpheader->spa[i]); 
+			printf("%d.", arpheader->spa[i]);
 
-		printf("\nTarget MAC: "); 
+		printf("\nTarget MAC: ");
 
 		for(i=0; i<6;i++)
-			printf("%02X:", arpheader->tha[i]); 
+			printf("%02X:", arpheader->tha[i]);
 
-		printf("\nTarget IP: "); 
+		printf("\nTarget IP: ");
 
 		for(i=0; i<4; i++)
-			printf("%d.", arpheader->tpa[i]); 
+			printf("%d.", arpheader->tpa[i]);
 
-		printf("\n"); 
-	} 
+		printf("\n");
+	}
 
 }
