@@ -167,9 +167,8 @@ u_char* make_arp_packet(device_info *p_dev_info, u_char dest_last_addr)
 	arphdr_t arp_hdr;
 
 	/* ethernet */
-	memset(&et_hdr, 0xff, 6);			/* et_hdr.h_dest[] */
-	memcpy((u_char*)&et_hdr+6, p_dev_info, 6);/* et_hdr.h_source[] */
-
+	memset(et_hdr.h_dest, 0xff, 6);			/* et_hdr.h_dest[] */
+	memcpy(et_hdr.h_source, p_dev_info->macaddr, 6);/* et_hdr.h_source[] */
 	et_hdr.h_proto = htons(0x0806);
 
 	/* arp */
@@ -179,15 +178,15 @@ u_char* make_arp_packet(device_info *p_dev_info, u_char dest_last_addr)
 	arp_hdr.oper = htons(ARP_REQUEST);
 	arp_hdr.hlen = 0x06;
 	arp_hdr.plen = 0x04;
-	memcpy((u_char*)&arp_hdr+8, p_dev_info, 6);	/* arp_hdr.sha[] */
-	memcpy((u_char*)&arp_hdr+14, (u_char*)p_dev_info + 6, 4);	/* arp_hdr.sha[] */
-	memcpy((u_char*)&arp_hdr+24, (u_char*)p_dev_info + 6, 3);	/* arp_hdr.tpa[3] 까지 */
+	memcpy(arp_hdr.sha, p_dev_info->macaddr, 6);	/* set sha */
+	memcpy(arp_hdr.spa, p_dev_info->ipaddr, 4);	/* set spa */
+	memcpy(arp_hdr.tpa, p_dev_info->ipaddr, 3);	/* set tpa until 0.0.0 */
 
 	arp_hdr.tpa[3] = dest_last_addr;
 
 	memset(pack_data, 0, sizeof(pack_data));
 	memcpy(pack_data, &et_hdr, 14);
-	memcpy(pack_data+14, &arp_hdr, 28);
+	memcpy(pack_data + 14, &arp_hdr, 28);
 
 	return pack_data;
 }
