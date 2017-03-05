@@ -4,6 +4,7 @@
 #define BUFFER_SIZE 255
 
 void receiver_fifo(network_grub_args *n_args);
+int get_gateway_last_num(u_char *g_ip);
 
 int main(int argc, char *argv[])
 {
@@ -15,10 +16,9 @@ int main(int argc, char *argv[])
 	printf("network Scaning\n");
 
 	memset(&n_args, 0, sizeof(n_args));
-	n_args.g_ip = 1;
 
-	if (argc > 1)
-		n_args.g_ip = atoi(argv[1]);
+	if (get_gateway_last_num(&n_args.g_ip) < 0)
+		return 0;
 
 	ret = pthread_create(&t_id, NULL, networkScan, &n_args);
 	if (ret) {
@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (argc > 2) {
-		for (i = 2; i < argc; i++) {
+	if (argc > 1) {
+		for (i = 1; i < argc; i++) {
 			int t_ip = atoi(argv[i]);
 			printf("%d\n",t_ip);
 			n_args.k_list.target_ip[t_ip] = 1;
@@ -100,4 +100,32 @@ void receiver_fifo(network_grub_args *n_args)
 	}
 
 	close(pipeFd);
+}
+
+int get_gateway_last_num(u_char *g_ip)
+{
+	char command[] = "route | grep default | awk -F' ' '{print $2}' | awk -F'.' '{print $4}'";
+	char str[4];
+	FILE *fp;
+	int ret;
+
+	fp = popen(command, "r");
+	if (!fp) {
+		fprintf(stderr, "file open error\n");
+		return -1;
+	}
+
+	ret = fread((void *)str, sizeof(char), 4, fp);
+	if (!ret) {
+		fprintf(stderr, "file open error\n");
+		ret = -1;
+		goto err;
+	}
+
+	*g_ip = atoi(str);
+
+err:
+	pclose(fp);
+
+	return ret;
 }
