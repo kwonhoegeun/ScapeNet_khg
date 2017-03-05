@@ -121,6 +121,7 @@ void *networkScan(void *arg)
 		pthread_mutex_unlock(&grub.mutex);
 
 		send_arp_packet(descr, &dev_info);
+		printf("\nSend arp packet 1 ~ 254 !!!!\n");
 		sleep(3);
 
 		printf("\nNetwork Node Status!!!!\n");
@@ -293,7 +294,6 @@ int check_reply_packet(const u_char *packet, struct pcap_pkthdr *pkthdr,
 			receiver_grub_args *grub)
 {
 	etherhdr_t *ether = (etherhdr_t*)(packet);
-	int i=0;
 
 	if (ntohs(ether->h_proto) != 0x0806)
 		return 1;
@@ -308,11 +308,6 @@ int check_reply_packet(const u_char *packet, struct pcap_pkthdr *pkthdr,
 		return 1;
 
 	if (ntohs(arpheader->htype) == 1 && ntohs(arpheader->ptype) == 0x0800) {
-		printf("Receiver IP: ");
-		for (i = 0; i < 4; i++)
-			printf("%d.", arpheader->spa[i]);
-		printf("\n");
-
 		pthread_mutex_lock(&grub->mutex);
 		grub->p_node_status->node[arpheader->spa[3]] = 1;
 		pthread_mutex_unlock(&grub->mutex);
