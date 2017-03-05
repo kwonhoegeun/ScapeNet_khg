@@ -32,7 +32,7 @@ u_char *make_kill_packet(device_info gate_info, u_char gate_last_addr,
 	memcpy(chage_macaddr, &gate_info, 6);
 	chage_macaddr[5] = 0x11;
 
-	memset(&arp_hdr, 0x00, sizeof(arphdr_t));
+	memset(&arp_hdr, 0x00, sizeof(arp_hdr));
 
 	/* ethernet */
 	// memset(&et_hdr, 0xff, 6);            /* et_hdr.h_dest[] */

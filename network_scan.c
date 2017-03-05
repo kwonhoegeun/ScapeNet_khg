@@ -173,7 +173,7 @@ u_char* make_arp_packet(device_info dev_info, u_char dest_last_addr)
 	et_hdr.h_proto = htons(0x0806);
 
 	/* arp */
-	memset(&arp_hdr, 0x00, sizeof(arphdr_t));	/* init */
+	memset(&arp_hdr, 0x00, sizeof(arp_hdr));	/* init */
 	arp_hdr.htype = htons(0x0001);
 	arp_hdr.ptype = htons(0x0800);
 	arp_hdr.oper = htons(ARP_REQUEST);
@@ -206,8 +206,7 @@ int get_device_info(device_info *p_dev_info, const char *ethernet_name)
 	int numreqs = 30;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 
-	memset(p_dev_info, 0, sizeof(device_info));
-
+	memset(p_dev_info, 0, sizeof(*p_dev_info));
 
 	/* 이더넷 설정정보를 가지고오기 위해서 */
 	/* 설정 구조체를 초기화하고 */
