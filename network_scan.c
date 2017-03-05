@@ -95,7 +95,7 @@ void *networkScan(void *arg)
 
 	grub.p_descr = descr;
 	grub.p_node_status = &node_status;
-	memcpy(&grub.source_ip, &dev_info.ipaddr, 4);
+	memcpy(grub.source_ip, dev_info.ipaddr, 4);
 	pthread_mutex_init(&grub.mutex, NULL);
 
 	state1 = pthread_create(&t_id1, NULL, receiver, &grub);
