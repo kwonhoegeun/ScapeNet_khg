@@ -7,7 +7,7 @@ void *networkScan(void *arg)
 	char errbuf[PCAP_ERRBUF_SIZE];	/* Error buffer                          */
 	pcap_t *descr = NULL;		/* Network interface handler             */
 	char ethernet_arr[][16] = { "eth0", "enp2s0", "wlp3s0" };
-	int ethernet_idx;
+	unsigned int ethernet_idx;
 	device_info dev_info;		/* my ethernet address*/
 	device_info gate_info;
 	NodeStatus node_status;		/* node info */
