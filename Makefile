@@ -1,19 +1,17 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -W -Wall
 LDFLAGS = -lm -lpcap -lpthread
-
-all: scan
 
 scan: main.o network_scan.o node_kill.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-main.o: main.c network_scan.h
+main.o: main.c
 	$(CC) $(CFLAGS) -c $<
 
-network_scan.o: network_scan.c network_scan.h
+network_scan.o: network_scan.c
 	$(CC) $(CFLAGS) -c $<
 
-node_kill.o: node_kill.c node_kill.h
+node_kill.o: node_kill.c
 	$(CC) $(CFLAGS) -c $<
 
 clean:
