@@ -283,15 +283,14 @@ void *receiver(void *arg)
 		if (pcap_next_ex(p_descr, &p_pkthdr, &p_packet) != 1)
 			continue;
 
-		check_reply_packet(p_packet, p_pkthdr, grub);
+		check_reply_packet(p_packet, grub);
 		//print_packet(p_packet);
 	}
 
 	return 0;
 }
 
-int check_reply_packet(const u_char *packet, struct pcap_pkthdr *pkthdr,
-			receiver_grub_args *grub)
+int check_reply_packet(const u_char *packet, receiver_grub_args *grub)
 {
 	etherhdr_t *ether = (etherhdr_t*)(packet);
 

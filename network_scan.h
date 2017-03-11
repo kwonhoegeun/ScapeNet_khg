@@ -37,6 +37,5 @@ int get_device_info(device_info *, const char *);
 void print_packet(const u_char *);
 
 void *receiver(void *);
-int check_reply_packet(const u_char *, struct pcap_pkthdr *,
-			receiver_grub_args *);
+int check_reply_packet(const u_char *, receiver_grub_args *);
 #endif
