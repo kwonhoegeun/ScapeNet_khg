@@ -1,3 +1,7 @@
 #!/bin/sh
 
-mkfifo --mode 0666 .write_sense
+if ! [ -d build ] ; then
+	mkdir build
+fi
+
+mkfifo --mode 0666 ./build/.write_sense
