@@ -1,7 +1,10 @@
 #!/bin/sh
 
-if ! [ -d build ] ; then
+if [ ! -d build ]; then
 	mkdir build
 fi
 
-mkfifo --mode 0666 ./build/.write_sense
+if [ ! -p ./build/.write_sense ]; then
+	echo "Created fifo file into './build'"
+	mkfifo --mode 0666 ./build/.write_sense
+fi
