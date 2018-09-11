@@ -27,6 +27,8 @@ set(SRC_FILES
 
 add_executable(scan ${SRC_FILES})
 
+include(cmake/FindPCAP.cmake)
+
 target_include_directories(scan
 	PUBLIC
 	${PROJECT_SOURCE_DIR}/include
@@ -35,5 +37,5 @@ target_include_directories(scan
 target_link_libraries(scan
 	PUBLIC
 	scapnet
-	-lpthread -lpcap
+	-lpthread ${PCAP_LIBRARY}
 )
