@@ -15,6 +15,11 @@ add_library(scapenet
 	${LIB_FILES}
 )
 
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 0)
+set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}")
+set_target_properties(scapenet PROPERTIES VERSION ${VERSION})
+
 target_include_directories(scapenet
 	PUBLIC
 	${PROJECT_SOURCE_DIR}/include
