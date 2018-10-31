@@ -10,12 +10,12 @@ set(LIB_FILES
 	src/node_kill.c
 )
 
-add_library(scapnet
+add_library(scapenet
 	SHARED
 	${LIB_FILES}
 )
 
-target_include_directories(scapnet
+target_include_directories(scapenet
 	PUBLIC
 	${PROJECT_SOURCE_DIR}/include
 )
@@ -36,6 +36,6 @@ target_include_directories(scan
 
 target_link_libraries(scan
 	PUBLIC
-	scapnet
+	scapenet
 	-lpthread ${PCAP_LIBRARY}
 )
